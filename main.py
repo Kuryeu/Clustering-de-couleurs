@@ -1,173 +1,93 @@
-from tkinter import *
-from tkinter import filedialog
-from PIL.Image import *
-from PIL import Image, ImageTk
-from random import *
-from math import sqrt
-
-window = Tk()
-window.title("Projet 2 Forage de données")
-
-
-
-def openfile():
-    global image
-    window.filename = filedialog.askopenfilename(initialdir="./rsc", title = "choisis frr", filetypes=[("png", "*.png"),("jpg", "*.jpg *.jpeg")])
-
-    text= Label(window, text=window.filename).pack()
-    image= ImageTk.PhotoImage(Image.open(window.filename))
-    print (window.filename)
-    image_label = Label(image=image).pack()
-    algorithm_button = Button ( window, text = "Appliquer algorithme", command=KMeansOnImage(str(window.filename),4,10)).pack()
-
-def euclidian_distance(p1, p2):
-  return sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
-
-def manhattan_distance(p1, p2):
-  return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
-
-
-
-def KMeansOnImage(imagepath,k,iter):
-
-    #Ouverture de l'image de référence
-    untouch_image=open(imagepath).load()
-    #Ouverture de l'image qui sera modifié
-    touch_image = open(imagepath)
-    #Récupération des dimensions
-    width, height = touch_image.size
-    #Génération aléatoire de k centroïdes dans l'image
-    centroids = generateKColors(k,touch_image)
-
-    #Chargement de l'image qui sera modifiée
-    Update_image = touch_image.load()
-
-    for i in range(0,iter):
-        #Variable contenant les pixels rattachés à chaque centroïde
-        get_pix_for_each_centroids=[[] for r in range(k)]
-        #On parcourt l'image
-        for x in range(width):
-            for y in range(height):                    
-                centroids_dist_from_pix=[]
-                #Pour chaque centroïde
-                for elem in centroids:
-                    #On stocke les distances du pixel(x,y) à chaque centroïde
-                    centroids_dist_from_pix.append(manhattan_distance(elem,untouch_image[x,y]))
-                #On assigne le pixel au centroïde le plus proche
-                get_pix_for_each_centroids[centroids_dist_from_pix.index(min(centroids_dist_from_pix))].append(untouch_image[x,y])
-                Update_image[x,y] = centroids[centroids_dist_from_pix.index(min(centroids_dist_from_pix))] 
-
-        #On replace chaque centroïde en calculant la moyenne des distances aux autres pixels
-        centroids=computeMean(centroids, get_pix_for_each_centroids)
-    touch_image.save("result/result_image.png")
-
-        
-        
-    
-def computeMean(centroids, centroidsPixList):
-    #On calcule la moyenne et on retourne la nouvelle valeur du centroïde
-    for elem in centroidsPixList:
-        r_sum=0
-        g_sum=0
-        b_sum=0
-        for rgbtuple in elem:
-            r_sum+=rgbtuple[0]
-            g_sum+=rgbtuple[1]
-            b_sum+=rgbtuple[2]
-        centroids[centroidsPixList.index(elem)]=(int(r_sum/(len(elem)+1)),int(g_sum/(len(elem)+1)),int(b_sum/(len(elem)+1)))
-    return centroids
-
-#Définition de centroïdes random dans l'image
-def generateKColors(k,image):
-    init_Kcentroid_list=[]
-    for i in range(0,k):
-        init_Kcentroid_list.append(image.getpixel((randint(0,image.size[0]-1),randint(0,image.size[1]-1))))
-    return init_Kcentroid_list
-
-
-
-
-
-open_button = Button(window, text= "Ouvrir image", command=openfile).pack()
-window.mainloop()
-
 ##################################
 #        FORAGE DE DONNES        #
 #  TP2 - CLUSTERING DE COULEURS  #
 #   Auteur : MELLIER Valentin    #
 ##################################
-#Libs utilisés dans le fichier dbscan.py
-
+#Libs utilisés dans le fichier main.py
+from tkinter import *
+from tkinter import filedialog
+from tkinter import ttk
+from turtle import onclick, right, window_height, window_width
 from PIL.Image import *
+from PIL import Image, ImageTk
+from random import *
 from math import sqrt
-import numpy as np
-import random
-
-def euclidian_distance(p1, p2):
-  return sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
-
-def manhattan_distance(p1, p2):
-  return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
-
-def DbscanOnImage(imagepath,d,m):
-    #Ouverture de l'image qui sera modifié
-    image = open(imagepath)
-    width, height = image.size
-    image_array=np.array(image)
+import kmeans
+import dbscan
 
 
-    #Définition du tableau contenant la liste des pixels non visités
-    unvisitedpixel=[]
-    for x in range(width):
-      for y in range(height):  
-        unvisitedpixel.append((x,y))
+window = Tk()
+window.title("Projet 2 Forage de données")
+# window.geometry("500x500")
 
-    #Pile contenant la liste des pixels à visiter pour élaborer un cluster
-    stack=[]
 
-    #Tant qu'on a pas visité tous les pixels
-    while(len(unvisitedpixel)!=0):
-      #Choix d'un pixel random et ajout à la pile
-      stack.append(random.choice(unvisitedpixel))
+def openfile_kmeans():
+    global image
+    global result_image
+    for widget in comparizon_frame.winfo_children():
+       widget.destroy()
+    #file browser
+    window.filename = filedialog.askopenfilename(initialdir="./rsc", title = "Appliquer Kmeans sur l'image choisie", filetypes=[("png", "*.png"),("jpg", "*.jpg *.jpeg")])
+    image= ImageTk.PhotoImage(Image.open(window.filename))
 
-      #Tant qu'il y a des pixels proches à visiter pour élaborer un cluster
-      while(len(stack)!=0):
-        current_pixel=stack.pop()
-        unvisitedpixel.remove(current_pixel)
-        print(current_pixel)
+    #applying kmeans algorithm
+    kmeans.KMeansOnImage(str(window.filename),int(entry_k.get()),int(entry_iter.get()))
+  
+    #printing input image
+    text1= Label(comparizon_frame, text="Before Kmeans").pack()
+    image_label = Label(comparizon_frame, image=image).pack()
 
-        pixelColor=image_array[current_pixel[1]][current_pixel[0]]
-
-        #Explore neighbours
-        
-# DBScan
-# def checkNeighbours(pixel,d,m,image):
-#   pixelColor=image[pixel[0]][pixel[1]]
-
-#   #Get list of neighbours
-#   neighbours=image[pixel[0]-d,pixel[0]+d][pixel[1]-d,pixel[1]+d]
-
-#   #If core point
-#   #If border point
-#   #If noise
-
-# #def definePixelType(pixel,d,m):
+    #printing output image
+    text2= Label(comparizon_frame, text="After Kmeans").pack()
+    text3= Label(kmeans_frame, text="Kmeans on "+ window.filename + " done !").pack()
+    result_image= ImageTk.PhotoImage(Image.open("./result/result_image_kmeans.png"))  
+    result_image_label = Label(comparizon_frame, image=result_image).pack()
+    # result_image_label = Label(kmeans_frame, image=result_image).pack()
 
     
+def cleartab() :
+    for widget in comparizon_frame.winfo_children():
+        widget.destroy()
+    clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
 
-#     #1 - Choix d'un pixel random, récupération de sa couleur RGB
 
-#     #2 - Fonction avec le param d(rayon du cercle) et m (nombre minimum de points dans le cercle)
-#     #Dessiner un cercle de rayon d autour du point
-#     # Asignation du type de point:
-#     # core_point si cnt_neighbour >= m (Dans ce cas création du cluster rassemblant tous les voisins)
-#     #   Application du même algorithme à chaque sous voisin
-#     # border_point si cnt_neighbour < m 
-#     # noise si cnt_neigbour = 0
+#creating tabs
+my_notebook=ttk.Notebook(window)
+my_notebook.pack()
 
-# #TEST
-# DbscanOnImage("perceval.jpg",3,2)
-# # a= np.array([[1, 2, 3],
-# #             [4, 5, 6],
-# #             [7, 8, 9]])
-# # print(a[1:1,1:1])
+comparizon_frame = Frame(my_notebook)
+kmeans_frame = Frame(my_notebook, width=500, height=500)
+dbs_frame = Frame(my_notebook, width=500, height=500)
+
+comparizon_frame.pack(fill="both",expand=1)
+kmeans_frame.pack(fill="both",expand=1)
+dbs_frame.pack(fill="both",expand=1)
+
+my_notebook.add(kmeans_frame, text= "Kmeans")
+my_notebook.add(dbs_frame, text= "DBScan")
+my_notebook.add(comparizon_frame, text= "Comparizon")
+
+
+my_scrollbar= ttk.Scrollbar(comparizon_frame,orient=VERTICAL)
+my_scrollbar.pack(side="right",fill=Y)
+
+#kmeans frame 
+label_k = Label(kmeans_frame, text="Choisir valeur de k", pady=10).pack()
+entry_k = Entry(kmeans_frame)
+entry_k.pack()
+
+label_iter = Label(kmeans_frame, text="Choisir nombre iter", pady=10).pack()
+entry_iter = Entry(kmeans_frame)
+entry_iter.pack()
+
+open_kmeans_button = Button(kmeans_frame,text= "Ouvrir image", command=openfile_kmeans).pack()
+
+#comparizon frame
+
+clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
+
+
+window.mainloop()
+
+
+
