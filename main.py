@@ -7,7 +7,8 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
-from turtle import onclick, right, window_height, window_width
+from functools import partial
+from turtle import clear, onclick, right, window_height, window_width
 from PIL.Image import *
 from PIL import Image, ImageTk
 from random import *
@@ -21,33 +22,59 @@ window.title("Projet 2 Forage de données")
 # window.geometry("500x500")
 
 
-def openfile_kmeans():
+def openfile(method):
     global image
-    global result_image
-    for widget in comparizon_frame.winfo_children():
-       widget.destroy()
+    global result_image_kmeans
+    # global image_dbs
+    global result_image_dbs
+
+    #del all widgets in comparizon tab
+    cleartab()
+       
     #file browser
-    window.filename = filedialog.askopenfilename(initialdir="./rsc", title = "Appliquer Kmeans sur l'image choisie", filetypes=[("png", "*.png"),("jpg", "*.jpg *.jpeg")])
+    window.filename = filedialog.askopenfilename(initialdir="./rsc", title = "Choisis une photo mon bro", filetypes=[("png", "*.png"),("jpg", "*.jpg *.jpeg")])
     image= ImageTk.PhotoImage(Image.open(window.filename))
 
-    #applying kmeans algorithm
-    kmeans.KMeansOnImage(str(window.filename),int(entry_k.get()),int(entry_iter.get()))
-  
-    #printing input image
-    text1= Label(comparizon_frame, text="Before Kmeans").pack()
-    image_label = Label(comparizon_frame, image=image).pack()
 
-    #printing output image
-    text2= Label(comparizon_frame, text="After Kmeans").pack()
-    text3= Label(kmeans_frame, text="Kmeans on "+ window.filename + " done !").pack()
-    result_image= ImageTk.PhotoImage(Image.open("./result/result_image_kmeans.png"))  
-    result_image_label = Label(comparizon_frame, image=result_image).pack()
-    # result_image_label = Label(kmeans_frame, image=result_image).pack()
+    if method == "kmeans" :
+        #applying kmeans algorithm
+        k_value=entry_k.get()
+        iter_value = entry_iter.get()
+        kmeans.KMeansOnImage(str(window.filename),int(k_value),int(iter_value))
+    
+        #printing input image
+        text1= Label(comparizon_frame, text="Before Kmeans").pack()
+        image_label = Label(comparizon_frame, image=image).pack()
+
+        #printing output image
+        text2= Label(comparizon_frame, text="After Kmeans (k=" + k_value + ", iter=" + iter_value + ")").pack()
+        text3= Label(kmeans_frame, text="Kmeans on "+ window.filename + " done !").pack()
+        result_image_kmeans= ImageTk.PhotoImage(Image.open("./result/result_image_kmeans.png"))  
+        result_image_kmeans_label = Label(comparizon_frame, image=result_image_kmeans).pack()
+        # result_image_kmeans_label = Label(kmeans_frame, image=result_image_kmeans).pack()
+  
+    if method == "dbs" :
+        #applying dbscan algorithm        
+        m_value=entry_m.get()
+        d_value=entry_d.get()
+        dbscan.DbscanOnImage(str(window.filename),int(m_value),int(d_value))
+    
+        #printing input image
+        text1= Label(comparizon_frame, text="Before dbscan").pack()
+        image_label = Label(comparizon_frame, image=image).pack()
+
+        #printing output image
+        text2= Label(comparizon_frame, text="After dbscan (m=" + m_value + ", d=" + d_value + ")").pack()
+        text3= Label(dbs_frame, text="Dbscan on "+ window.filename + " done !").pack()
+        result_image_dbs= ImageTk.PhotoImage(Image.open("./result/result_image_dbs.png"))  
+        result_image_dbs_label = Label(comparizon_frame, image=result_image_dbs).pack()
+        # result_image_dbs_label = Label(dbs_frame, image=result_image_dbs).pack()
 
     
 def cleartab() :
     for widget in comparizon_frame.winfo_children():
         widget.destroy()
+        
     # clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
 
 
@@ -80,7 +107,18 @@ label_iter = Label(kmeans_frame, text="Choisir nombre itérations", pady=10).pac
 entry_iter = Entry(kmeans_frame)
 entry_iter.pack()
 
-open_kmeans_button = Button(kmeans_frame,text= "Ouvrir image", command=openfile_kmeans).pack()
+open_kmeans_button = Button(kmeans_frame,text= "Ouvrir image", command=partial(openfile, "kmeans")).pack()
+
+#dbs frame 
+label_d = Label(dbs_frame, text="Choisir valeur de d", pady=10).pack()
+entry_d = Entry(dbs_frame)
+entry_d.pack()
+
+label_m = Label(dbs_frame, text="Choisir valeur de m", pady=10).pack()
+entry_m = Entry(dbs_frame)
+entry_m.pack()
+
+open_dbs_button = Button(dbs_frame,text= "Ouvrir image", command=partial(openfile,"dbs")).pack()
 
 #comparizon frame
 

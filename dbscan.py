@@ -95,7 +95,7 @@ def DbscanOnImage(imagepath,d,m):
     if(first_point==False):
       k+=1
       save_im=fromarray(np.uint8(image_array))
-      save_im.save("resultdb.png")
+      save_im.save("./result/result_image_dbs.png")
 
       
         
