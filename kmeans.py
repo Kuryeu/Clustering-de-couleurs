@@ -1,21 +1,28 @@
-
 ##################################
 #        FORAGE DE DONNES        #
 #  TP2 - CLUSTERING DE COULEURS  #
-#   Auteur : MELLIER Valentin    #
+# Auteurs : - MELLIER Valentin   #
+#           - LAUGIER Alexis     #
 ##################################
 #Libs utilisés dans le fichier kmeans.py
 
-from tkinter import *
-from tkinter import filedialog
 from PIL.Image import *
-from PIL import Image, ImageTk
 from random import *
 from math import sqrt
 
+def euclidian_distance(p1, p2):
+  return sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
+
+def manhattan_distance(p1, p2):
+  return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
+
+
+
 def KMeansOnImage(imagepath,k,iter):
+
     #Ouverture de l'image de référence
     untouch_image=open(imagepath).load()
+
     #Ouverture de l'image qui sera modifié
     touch_image = open(imagepath)
     #Récupération des dimensions
@@ -43,7 +50,7 @@ def KMeansOnImage(imagepath,k,iter):
 
         #On replace chaque centroïde en calculant la moyenne des distances aux autres pixels
         centroids=computeMean(centroids, get_pix_for_each_centroids)
-    touch_image.save("result/result_image_kmeans.png")
+    touch_image.save("./result/result_image_kmeans.png")
 
         
         
@@ -69,8 +76,4 @@ def generateKColors(k,image):
     return init_Kcentroid_list
 
 
-def euclidian_distance(p1, p2):
-  return sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
-
-def manhattan_distance(p1, p2):
-  return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
+#TEST

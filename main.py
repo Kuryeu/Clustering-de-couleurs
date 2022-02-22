@@ -48,7 +48,7 @@ def openfile_kmeans():
 def cleartab() :
     for widget in comparizon_frame.winfo_children():
         widget.destroy()
-    clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
+    # clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
 
 
 #creating tabs
@@ -76,7 +76,7 @@ label_k = Label(kmeans_frame, text="Choisir valeur de k", pady=10).pack()
 entry_k = Entry(kmeans_frame)
 entry_k.pack()
 
-label_iter = Label(kmeans_frame, text="Choisir nombre iter", pady=10).pack()
+label_iter = Label(kmeans_frame, text="Choisir nombre itérations", pady=10).pack()
 entry_iter = Entry(kmeans_frame)
 entry_iter.pack()
 
@@ -84,7 +84,7 @@ open_kmeans_button = Button(kmeans_frame,text= "Ouvrir image", command=openfile_
 
 #comparizon frame
 
-clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
+# clear_button = Button(comparizon_frame, text = "Clear", command=cleartab).pack()
 
 
 window.mainloop()
