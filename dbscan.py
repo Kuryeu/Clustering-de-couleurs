@@ -1,7 +1,8 @@
 ##################################
 #        FORAGE DE DONNES        #
 #  TP2 - CLUSTERING DE COULEURS  #
-#   Auteur : MELLIER Valentin    #
+# Auteurs : - MELLIER Valentin   #
+#           - LAUGIER Alexis     #
 ##################################
 #Libs utilisés dans le fichier dbscan.py
 
@@ -22,7 +23,7 @@ def manhattan_distance(p1, p2):
   return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
 
 def DbscanOnImage(imagepath,d,m):
-  global first_point
+  global first_point,image_array
   k=0
   #Ouverture de l'image qui sera modifié
   image = open(imagepath)
@@ -39,11 +40,11 @@ def DbscanOnImage(imagepath,d,m):
 
   #Pile contenant la liste des pixels à visiter pour élaborer un cluster
   stack=[]
+  clustercolor=[]
 
   #Tant qu'on a pas visité tous les pixels
   while(len(unvisitedpixel)!=0):
     print(len(unvisitedpixel))
-    clustercolor=[]
     first_point = True
     #Choix d'un pixel random et ajout à la pile
     pixelchoosed=random.choice(unvisitedpixel)
@@ -56,7 +57,6 @@ def DbscanOnImage(imagepath,d,m):
       current_pixel=stack.pop(0)
       #Explore neighbours
       neighboursList=checkNeighbours(current_pixel,d,image_array,width,height)
-
       #Define pixel type
       definePixelType(current_pixel,neighboursList,m)
 
@@ -71,28 +71,13 @@ def DbscanOnImage(imagepath,d,m):
           if res:
               unvisitedpixel.remove(res[0])
 
-      if(current_pixel[2]=="is_border"):
-
-        #Assigner le pixel à la couleur de son cluster et terminer la recherche des voisins
-        image_array[current_pixel[1],current_pixel[0]]=clustercolor[k]
-
-        res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == current_pixel[0] and y==current_pixel[1])]
-        if res:
-              unvisitedpixel.remove(res[0])
-
-
-        #Assigner le pixel à la couleur de son cluster et terminer la recherche des voisins
-        image_array[current_pixel[1],current_pixel[0]]=clustercolor[k]
-
-        res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == current_pixel[0] and y==current_pixel[1])]
-        if res:
-              unvisitedpixel.remove(res[0])
-
       #Création d'un nouveau cluster
-      if(current_pixel[2]=="is_core"):
+      elif(current_pixel[2]=="is_core"):
+        
         #Ajout de la couleur du nouveau cluster
         if(first_point):
           clustercolor.append(image_array[current_pixel[1]][current_pixel[0]])
+        
         first_point =False
         #Explore neighbours et affectation de la couleur
         image_array=setClusterColor(clustercolor[k],neighboursList,image_array)
@@ -102,14 +87,15 @@ def DbscanOnImage(imagepath,d,m):
               stack.append(res[0])
               unvisitedpixel.remove(res[0])
 
-      if(current_pixel[2]=="is_noise"):
+      elif(current_pixel[2]=="is_noise"):
         #Stop explore
         res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == current_pixel[0] and y==current_pixel[1])]
         if res:
               unvisitedpixel.remove(res[0])        
-  k+=1
-  save_im=fromarray(image_array)
-  save_im.save("resultdb.png")
+    if(first_point==False):
+      k+=1
+      save_im=fromarray(np.uint8(image_array))
+      save_im.save("resultdb.png")
 
       
         
@@ -146,4 +132,4 @@ def setClusterColor(pixel,neighbours,image):
 
 
 #TEST
-DbscanOnImage("perceval.jpg",10,5)
+DbscanOnImage("perceval.jpg",10,10)
