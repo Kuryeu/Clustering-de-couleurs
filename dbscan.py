@@ -11,125 +11,130 @@ from math import sqrt
 import numpy as np
 import random
 
-#Retourne la distance euclidienne entre la position de deux pixels
-def euclidian_distance_pixel(p1, p2):
-  return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
 
 #Retourne la distance euclidienne entre la couleur de deux pixels
 def euclidian_distance_color(p1, p2):
   return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
 
-def manhattan_distance(p1, p2):
+#Retourne la distance manhattan entre la couleur de deux pixels
+def manhattan_distance_color(p1, p2):
   return (abs(p1[0]-p2[0])+abs(p1[1]-p2[1])+abs(p1[2]-p2[2]))
 
+#Fonction appliquant l'algo Dbscan à l'image (d: distance, m: nombre de noeuds dans un cluster)
 def DbscanOnImage(imagepath,d,m):
-  global first_point,image_array
+  global first_point,image_array_old,image_array_new,unvisitedpixel,k
   k=0
-  #Ouverture de l'image qui sera modifié
-  image = open(imagepath)
-  width, height = image.size
-  image_array=np.array(image)
-  image_array=image_array.astype('uint32')
 
+  #Ouverture de l'image qui sera analysée
+  image_old = open(imagepath)
+  width, height = image_old.size
+  image_array_old=np.array(image_old)
+  image_array_old=image_array_old.astype('int')
+
+  #Ouverture de l'image qui sera modifiée
+  image_new = open(imagepath) 
+  image_array_new=np.array(image_new)
+  image_array_new=image_array_new.astype('int')
 
   #Initialisation du tableau contenant la liste des pixels non visités
   unvisitedpixel=[]
   for x in range(width):
     for y in range(height):  
-      unvisitedpixel.append([x,y,"undefined"])
+      unvisitedpixel.append((y,x))
 
-  #Pile contenant la liste des pixels à visiter pour élaborer un cluster
+  #Pile contenant la liste des pixels à visiter pour élaborer des clusters
   stack=[]
+  #Tableau contenant la couleur de chaque cluster
   clustercolor=[]
 
   #Tant qu'on a pas visité tous les pixels
   while(len(unvisitedpixel)!=0):
+
+    #Affichage de l'avancée des pixels restant
     print(len(unvisitedpixel))
     first_point = True
-    #Choix d'un pixel random et ajout à la pile
-    pixelchoosed=random.choice(unvisitedpixel)
-    stack.append(pixelchoosed)
-    
 
+    #Choix d'un pixel random et ajout à la pile
+    stack.append(random.choice(unvisitedpixel))
+    
     #Tant qu'il y a des pixels proches à visiter pour élaborer un cluster
     while(len(stack)!=0):
 
-      current_pixel=stack.pop(0)
-      #Explore neighbours
-      neighboursList=checkNeighbours(current_pixel,d,image_array,width,height)
-      #Define pixel type
-      definePixelType(current_pixel,neighboursList,m)
+      current_pixel=stack.pop()
 
-      if(current_pixel[2]=="is_border" and first_point):
+      #On explore les voisins
+      neighboursList=checkNeighbours(current_pixel,d,image_array_old)
 
-        res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == current_pixel[0] and y==current_pixel[1])]
-        if res:
-              unvisitedpixel.remove(res[0])
+      #On définit le type de pixel (Noeud coeur/bordure/bruit)
+      current_pixel=definePixelType(current_pixel,neighboursList,m)
+      
+      #Si le pixel est une bordure et qu'il n'y a pas encore de cluster établit
+      if(current_pixel[2] & first_point):
 
+        #On indique le pixel et les voisins comme visités
+        unvisitedpixel.remove((current_pixel[0][0],current_pixel[0][1]))
+        neighboursList=set(neighboursList)&set(unvisitedpixel) 
+        continue
+
+      #On marque le pixel actuel comme visité et on vérifie qu'il n'y en a pas déjà visité dans la liste des voisins
+      unvisitedpixel.remove((current_pixel[0][0],current_pixel[0][1]))
+      neighboursList=set(neighboursList)&set(unvisitedpixel) 
+
+      #Si noeud coeur, création d'un nouveau cluster
+      if(current_pixel[1]):
+        if(first_point==True):
+          clustercolor.append(image_array_old[current_pixel[0][0]][current_pixel[0][1]])
+          first_point =False
+          
+        #Affectation de la couleur aux voisins
+        image_array_new=setClusterColor(clustercolor[k],neighboursList,image_array_new)
+
+        #Ajout des voisins à la stack pour exploration
         for pixel in neighboursList:
-          res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == pixel[0] and y==pixel[1])]
-          if res:
-              unvisitedpixel.remove(res[0])
-
-      #Création d'un nouveau cluster
-      elif(current_pixel[2]=="is_core"):
+          if pixel not in stack:
+            stack.append(pixel)
+        continue
         
-        #Ajout de la couleur du nouveau cluster
-        if(first_point):
-          clustercolor.append(image_array[current_pixel[1]][current_pixel[0]])
-        
-        first_point =False
-        #Explore neighbours et affectation de la couleur
-        image_array=setClusterColor(clustercolor[k],neighboursList,image_array)
-        for pixel in neighboursList:
-          res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == pixel[0] and y==pixel[1])]
-          if res:
-              stack.append(res[0])
-              unvisitedpixel.remove(res[0])
+      #Si noeud bordure
+      elif(current_pixel[2]):
+        #On assigne la couleur du pixel à la couleur du cluster courant
+        image_array_new[current_pixel[0][0]][current_pixel[0][1]]=clustercolor[k]
+        continue
 
-      elif(current_pixel[2]=="is_noise"):
-        #Stop explore
-        res = [[x,y,z] for [x,y,z] in unvisitedpixel if (x == current_pixel[0] and y==current_pixel[1])]
-        if res:
-              unvisitedpixel.remove(res[0])        
+      #Si aucun pixel voisin
+      elif(current_pixel[3]):
+        continue
+
     if(first_point==False):
       k+=1
-      save_im=fromarray(np.uint8(image_array))
-      save_im.save("./result/result_image_dbs.png")
-
-      
-        
+  save_im=fromarray(np.uint8(image_array_new))
+  save_im.save("fraisetest.png")
 
 
-def checkNeighbours(pixel,d,image,width,height):
-  nearDistPixels=create_circular_mask(height,width,pixel,d)
-  neighbourList=[]
-  for neighbour in nearDistPixels:
-    if (euclidian_distance_color(image[pixel[1]][pixel[0]],image[neighbour[1]][neighbour[0]]) < d):
-      neighbourList.append(neighbour)
-  return neighbourList
+#Vérif si le centre ne fait pas partie des voisins
+def checkNeighbours(pixel,d,image):
+  distances = np.linalg.norm(image - image[pixel[0], pixel[1]], ord=2, axis=2)
+  x, y = np.where((distances <= d) & (distances!=0))
+  return list(zip(x, y))
 
-
-def create_circular_mask(h,w,pixel,d):
-  y,x=np.ogrid[:h,:w]
-  mask_pixel=np.where((euclidian_distance_pixel((x,y),pixel) <= d)==True)
-  return list(zip(mask_pixel[1],mask_pixel[0]))
-
+#Définition du type de pixel
 def definePixelType(pixel,neighbours,m):
   neighbours_count=len(neighbours)
   if(neighbours_count>=m):
-    pixel[2]="is_core"
-  elif(neighbours_count<m and neighbours_count!=0):
-    pixel[2]="is_border"
+    #Coeur
+    return (pixel,True,False,False)
+  elif(neighbours_count<m and neighbours_count>0):
+    #Bordure
+    return (pixel,False,True,False)
   elif(neighbours_count==0):
-    pixel[2]="is_noise"
-  return pixel
+    #Bruit
+    return (pixel,False,False,True)
 
+#On assigne la couleur du cluster aux pixels de l'image concerné
 def setClusterColor(pixel,neighbours,image):
   for neighbour in neighbours:
-    image[neighbour[1],neighbour[0]]=pixel
+    image[neighbour[0],neighbour[1]]=pixel
   return image
 
-
-#TEST
-# DbscanOnImage("perceval.jpg",10,10)
+#Test
+#DbscanOnImage("fraise.jpg",3,2)
