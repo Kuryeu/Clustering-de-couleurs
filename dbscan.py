@@ -108,7 +108,7 @@ def DbscanOnImage(imagepath,d,m):
     if(first_point==False):
       k+=1
   save_im=fromarray(np.uint8(image_array_new))
-  save_im.save("fraisetest.png")
+  save_im.save("./result/result_image_dbs.png")
 
 
 #Vérif si le centre ne fait pas partie des voisins

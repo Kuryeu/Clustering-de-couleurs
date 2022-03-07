@@ -18,7 +18,7 @@ def manhattan_distance(p1, p2):
 
 
 
-def KMeansOnImage(imagepath,k,iter):
+def KMeansOnImage(imagepath,k,iter,dist):
 
     #Ouverture de l'image de référence
     untouch_image=open(imagepath).load()
@@ -43,7 +43,13 @@ def KMeansOnImage(imagepath,k,iter):
                 #Pour chaque centroïde
                 for elem in centroids:
                     #On stocke les distances du pixel(x,y) à chaque centroïde
-                    centroids_dist_from_pix.append(manhattan_distance(elem,untouch_image[x,y]))
+                    if dist=="manhattan" : 
+                        centroids_dist_from_pix.append(manhattan_distance(elem,untouch_image[x,y]))
+                    elif dist=="euclidian":
+                        centroids_dist_from_pix.append(euclidian_distance(elem,untouch_image[x,y]))
+                       
+                       
+
                 #On assigne le pixel au centroïde le plus proche
                 get_pix_for_each_centroids[centroids_dist_from_pix.index(min(centroids_dist_from_pix))].append(untouch_image[x,y])
                 Update_image[x,y] = centroids[centroids_dist_from_pix.index(min(centroids_dist_from_pix))] 

@@ -8,7 +8,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 from functools import partial
-from turtle import clear, onclick, right, window_height, window_width
+from turtle import clear, distance, onclick, right, window_height, window_width
 from PIL.Image import *
 from PIL import Image, ImageTk
 from random import *
@@ -37,17 +37,18 @@ def openfile(method):
 
 
     if method == "kmeans" :
+        distance=dist.get()
         #applying kmeans algorithm
         k_value=entry_k.get()
         iter_value = entry_iter.get()
-        kmeans.KMeansOnImage(str(window.filename),int(k_value),int(iter_value))
+        kmeans.KMeansOnImage(str(window.filename),int(k_value),int(iter_value),dist.get())
     
         #printing input image
         text1= Label(comparizon_frame, text="Before Kmeans").pack()
         image_label = Label(comparizon_frame, image=image).pack()
 
         #printing output image
-        text2= Label(comparizon_frame, text="After Kmeans (k=" + k_value + ", iter=" + iter_value + ")").pack()
+        text2= Label(comparizon_frame, text="After Kmeans (k=" + k_value + ", iter=" + iter_value + ", " + distance + " distance)").pack()
         text3= Label(kmeans_frame, text="Kmeans on "+ window.filename + " done !").pack()
         result_image_kmeans= ImageTk.PhotoImage(Image.open("./result/result_image_kmeans.png"))  
         result_image_kmeans_label = Label(comparizon_frame, image=result_image_kmeans).pack()
@@ -106,6 +107,11 @@ entry_k.pack()
 label_iter = Label(kmeans_frame, text="Choisir nombre itérations", pady=10).pack()
 entry_iter = Entry(kmeans_frame)
 entry_iter.pack()
+
+dist = StringVar()
+dist.set("manhattan")
+manhattan = Radiobutton(kmeans_frame, text = "Manhattan distance", variable = dist, value = "manhattan", pady=10).pack()
+euclidian = Radiobutton(kmeans_frame, text = "Euclidian distance", variable = dist, value = "euclidian" ).pack()
 
 open_kmeans_button = Button(kmeans_frame,text= "Ouvrir image", command=partial(openfile, "kmeans")).pack()
 
