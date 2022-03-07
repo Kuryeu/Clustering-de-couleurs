@@ -16,11 +16,10 @@ from math import sqrt
 import kmeans
 import dbscan
 
-
+print(Image.__version__)
 window = Tk()
 window.title("Projet 2 Forage de données")
 # window.geometry("500x500")
-
 
 def openfile(method):
     global image
